@@ -220,7 +220,7 @@ useEffect(() => {
     if (session) {
       setIsLoggedIn(true);
     } else {
-      router.push('/admin/login');
+      router.push('/admin');
     }
   };
   checkSession();
