@@ -211,7 +211,7 @@ export default function Admin() {
 
 useEffect(() => {
   const checkSession = async () => {
-    if (router.pathname === '/admin/login') return; // ✅ Don't run on login page
+    if (router.pathname === '/admin') return; // ✅ Don't run on login page
 
     const {
       data: { session },
