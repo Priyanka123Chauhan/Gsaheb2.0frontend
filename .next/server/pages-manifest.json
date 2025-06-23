@@ -1,0 +1,11 @@
+{
+  "/_app": "pages/_app.js",
+  "/blocked": "pages/blocked.js",
+  "/_error": "pages/_error.js",
+  "/": "pages/index.js",
+  "/order/[orderId]": "pages/order/[orderId].js",
+  "/admin": "pages/admin.js",
+  "/table/[id]": "pages/table/[id].js",
+  "/waiter": "pages/waiter.js",
+  "/_document": "pages/_document.js"
+}

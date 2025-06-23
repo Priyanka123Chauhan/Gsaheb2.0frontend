@@ -19,6 +19,7 @@ import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import PropTypes from 'prop-types';
 
+
 // Error Boundary to catch rendering errors
 class ErrorBoundary extends Component {
   state = { hasError: false, error: null };
@@ -83,6 +84,11 @@ export default function Admin() {
   const [orders, setOrders] = useState([]);
   const [menuItems, setMenuItems] = useState([]);
   const [newItem, setNewItem] = useState({ name: '', category: '', price: '', is_available: true });
+  const [newwifi, setNewWifi] = useState({ wifiname: '', password: ''});
+  const [wifiCredentials, setWifiCredentials] = useState([]);
+  const [wifiLoading, setWifiLoading] = useState(false);
+  const [wifiError, setWifiError] = useState(null);
+  const [editingId, setEditingId] = useState(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -129,6 +135,127 @@ export default function Admin() {
     }
   }, [activeTab]);
 
+  useEffect(() => {
+    const fetchWifiCredentials = async () => {
+      setWifiLoading(true);
+      setWifiError(null);
+      try {
+        const { data, error } = await supabase.from('wifi_credentials').select('*').order('created_at', { ascending: false });
+        if (error) throw error;
+        setWifiCredentials(data || []);
+      } catch (err) {
+        if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError') || err.message.includes('internet disconnected') || err.message.includes('Network request failed')) {
+          setWifiError('Network error: Please check your internet connection and try again.');
+        } else {
+          setWifiError(`Failed to fetch wifi credentials: ${err.message}`);
+        }
+      } finally {
+        setWifiLoading(false);
+      }
+    };
+
+    if (activeTab === 'Wifi') {
+      fetchWifiCredentials();
+    }
+  }, [activeTab]);
+
+  const addWifi = async () => {
+    console.log('addWifi function triggered');
+    if (!newwifi.wifiname || !newwifi.password) {
+      setWifiError('Wifi name and password are required');
+      return;
+    }
+    setWifiError(null);
+    try {
+      const { data, error } = await supabase.from('wifi_credentials').insert([
+        {
+          wifiname: newwifi.wifiname,
+          password: newwifi.password,
+        },
+      ]).select();
+      if (error) throw error;
+      setWifiCredentials((prev) => [data[0], ...prev]);
+      setNewWifi({ wifiname: '', password: '' });
+    } catch (err) {
+      if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError') || err.message.includes('internet disconnected') || err.message.includes('Network request failed')) {
+        setWifiError('Network error: Please check your internet connection and try again.');
+      } else {
+        setWifiError(`Failed to add wifi credential: ${err.message}`);
+      }
+    }
+  };
+
+  //edit wifi
+  const handleEdit = (item) => {
+  setNewWifi({ wifiname: item.wifiname, password: item.password });
+  setEditingId(item.id);
+};
+const addWifi = async () => {
+  if (!newwifi.wifiname.trim() || !newwifi.password.trim()) {
+    setWifiError('Wifi name and password are required');
+    return;
+  }
+
+  setWifiError(null);
+  try {
+    if (editingId) {
+      // Update existing record
+      const { data, error } = await supabase
+        .from('wifi_credentials')
+        .update({
+          wifiname: newwifi.wifiname,
+          password: newwifi.password,
+        })
+        .eq('id', editingId)
+        .select();
+
+      if (error) throw error;
+
+      setWifiCredentials((prev) =>
+        prev.map((item) => (item.id === editingId ? data[0] : item))
+      );
+      setEditingId(null);
+    } else {
+      // Insert new record
+      const { data, error } = await supabase
+        .from('wifi_credentials')
+        .insert([
+          { wifiname: newwifi.wifiname, password: newwifi.password },
+        ])
+        .select();
+
+      if (error) throw error;
+
+      setWifiCredentials((prev) => [data[0], ...prev]);
+    }
+
+    setNewWifi({ wifiname: '', password: '' });
+  } catch (err) {
+    setWifiError(`Failed to save wifi: ${err.message}`);
+  }
+};
+
+
+//delete wifi
+const handleDelete = async (id) => {
+  const confirmDelete = window.confirm('Are you sure you want to delete this Wi-Fi entry?');
+  if (!confirmDelete) return;
+
+  try {
+    const { error } = await supabase
+      .from('wifi_credentials')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+
+    setWifiCredentials((prev) => prev.filter((item) => item.id !== id));
+  } catch (err) {
+    setWifiError(`Failed to delete wifi: ${err.message}`);
+  }
+};
+
+
   const formatToIST = (date) => {
     const utcDate = new Date(date);
     const istDate = add(utcDate, { hours: 5, minutes: 30 });
@@ -149,7 +276,8 @@ export default function Admin() {
       if (session) {
         setIsLoggedIn(true);
       } else {
-        router.push('/admin/login');
+        // Removed redirect to /admin/login to fix 404 error
+        setIsLoggedIn(false);
       }
     };
     checkSession();
@@ -546,6 +674,9 @@ export default function Admin() {
       ]);
     }
   };
+
+
+  
 
   const saveOrder = async () => {
     try {
@@ -944,22 +1075,23 @@ export default function Admin() {
             </a>
           </div>
           <nav>
-            {['Pending Orders', 'Order History', 'Menu Management', 'Data Analytics'].map((tab) => (
-              <button
-                key={tab}
-                className={`w-full text-left py-3 px-4 mb-2 rounded-lg flex items-center gap-2 ${
-                  activeTab === tab ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-200'
-                }`}
-                onClick={() => setActiveTab(tab)}
-                aria-current={activeTab === tab ? 'page' : undefined}
-              >
-                {tab === 'Pending Orders' && <ClipboardDocumentListIcon className="h-5 w-5" />}
-                {tab === 'Order History' && <ClockIcon className="h-5 w-5" />}
-                {tab === 'Menu Management' && <PlusIcon className="h-5 w-5" />}
-                {tab === 'Data Analytics' && <ChartBarIcon className="h-5 w-5" />}
-                {tab}
-              </button>
-            ))}
+          {['Pending Orders', 'Order History', 'Menu Management', 'Wifi', 'Data Analytics'].map((tab) => (
+            <button
+              key={tab}
+              className={`w-full text-left py-3 px-4 mb-2 rounded-lg flex items-center gap-2 ${
+                activeTab === tab ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-200'
+              }`}
+              onClick={() => setActiveTab(tab)}
+              aria-current={activeTab === tab ? 'page' : undefined}
+            >
+              {tab === 'Pending Orders' && <ClipboardDocumentListIcon className="h-5 w-5" />}
+              {tab === 'Order History' && <ClockIcon className="h-5 w-5" />}
+              {tab === 'Menu Management' && <PlusIcon className="h-5 w-5" />}
+              {tab === 'Wifi' && <PlusIcon className="h-5 w-5" />}
+              {tab === 'Data Analytics' && <ChartBarIcon className="h-5 w-5" />}
+              {tab}
+            </button>
+          ))}
           </nav>
           <button
             className="w-full mt-4 bg-red-600 text-white py-3 rounded-lg hover:bg-red-700 transition"
@@ -1420,6 +1552,81 @@ export default function Admin() {
               </div>
             </div>
           )}
+
+          {activeTab === 'Wifi' && (
+            <div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">Wifi</h2>
+            <div className="bg-white p-6 rounded-lg shadow-md mb-6">
+            <h3 className="text-lg font-semibold mb-4">Add New Wifi</h3>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Name</label>
+                <input
+                  type="text"
+                  value={newwifi.wifiname}
+                  onChange={(e) => setNewWifi({ ...newwifi, wifiname: e.target.value })}
+                  className="border p-2 rounded-md w-full"
+                  aria-label="Wifi name"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Password</label>
+                <input
+                  type="text"
+                  value={newwifi.password}
+                  onChange={(e) => setNewWifi({ ...newwifi, password: e.target.value })}
+                  className="border p-2 rounded-md w-full"
+                  aria-label="Wifi password"
+                />
+              </div>
+              <button
+              className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition"
+              onClick={() => { addWifi(); }}
+              aria-label="Add wifi credential"
+            >
+              Add Wifi
+            </button>
+             </div>
+             <h3 className="text-lg font-semibold mb-4">Wifi Details</h3>
+          <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+            <table className="w-full table-auto">
+              <thead>
+                <tr className="bg-gray-50 border-b">
+                  <th className="text-left py-3 px-3 text-sm font-semibold text-gray-700">Wifi Name</th>
+                  <th className="text-left py-3 px-3 text-sm font-semibold text-gray-700">Password</th>
+                </tr>
+              </thead>
+              <tbody>
+                {wifiCredentials.map((item, index) => (
+                  <tr
+                    key={item.id}
+                    className={`border-b ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-gray-100 transition-colors`}
+                  >
+                    <td className="py-3 px-4 text-sm text-gray-800">{item.wifiname || 'N/A'}</td>
+                    <td className="py-3 px-4 text-sm text-gray-600">{item.password || 'N/A'}</td>
+                  <td className="py-3 px-4 text-sm flex gap-2">
+<button
+  className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition"
+  onClick={addWifi}
+>
+  {editingId ? 'Update Wifi' : 'Add Wifi'}
+</button>
+  <button
+    onClick={() => handleDelete(item.id)}
+    className="text-red-600 hover:underline"
+  >
+    Delete
+  </button>
+</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          </div>
+
+            </div>
+          )} 
 
           {activeTab === 'Menu Management' && (
             <div>
