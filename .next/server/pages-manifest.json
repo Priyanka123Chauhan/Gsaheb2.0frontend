@@ -1,11 +1,1 @@
-{
-  "/_app": "pages/_app.js",
-  "/blocked": "pages/blocked.js",
-  "/_error": "pages/_error.js",
-  "/": "pages/index.js",
-  "/order/[orderId]": "pages/order/[orderId].js",
-  "/admin": "pages/admin.js",
-  "/table/[id]": "pages/table/[id].js",
-  "/waiter": "pages/waiter.js",
-  "/_document": "pages/_document.js"
-}
+{"/_app":"pages/_app.js","/_error":"pages/_error.js","/blocked":"pages/blocked.html","/admin":"pages/admin.html","/":"pages/index.html","/order/[orderId]":"pages/order/[orderId].html","/table/[id]":"pages/table/[id].html","/waiter":"pages/waiter.html","/wifi-required":"pages/wifi-required.html","/_document":"pages/_document.js","/404":"pages/404.html"}
