@@ -182,6 +182,72 @@ export default function Admin() {
     }
   };
 
+
+  //edit,delete,active and incative fun
+
+const handleEditWifi = (item) => {
+  setNewWifi({
+    id: item.id,
+    wifiname: item.wifiname,
+    password: item.password,
+  });
+};
+
+const handleDeleteWifi = async (id) => {
+  if (!confirm('Are you sure you want to delete this Wi-Fi entry?')) return;
+
+  try {
+    const { error } = await supabase.from('wifi_credentials').delete().eq('id', id);
+    if (error) throw error;
+    setWifiCredentials((prev) => prev.filter((w) => w.id !== id));
+  } catch (err) {
+    setWifiError(`Delete failed: ${err.message}`);
+  }
+};
+
+const toggleWifiStatus = async (id, newStatus) => {
+  try {
+    const { data, error } = await supabase
+      .from('wifi_credentials')
+      .update({ is_active: newStatus })
+      .eq('id', id)
+      .select();
+    if (error) throw error;
+    setWifiCredentials((prev) =>
+      prev.map((w) => (w.id === id ? { ...w, is_active: newStatus } : w))
+    );
+  } catch (err) {
+    setWifiError(`Failed to toggle status: ${err.message}`);
+  }
+};
+
+  const updateWifi = async () => {
+  if (!newwifi.wifiname || !newwifi.password) {
+    setWifiError('Name and password are required');
+    return;
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('wifi_credentials')
+      .update({
+        wifiname: newwifi.wifiname,
+        password: newwifi.password,
+      })
+      .eq('id', newwifi.id)
+      .select();
+
+    if (error) throw error;
+
+    setWifiCredentials((prev) =>
+      prev.map((item) => (item.id === newwifi.id ? data[0] : item))
+    );
+    setNewWifi({ wifiname: '', password: '' }); // Reset form
+  } catch (err) {
+    setWifiError(`Failed to update: ${err.message}`);
+  }
+};
+
   const formatToIST = (date) => {
     const utcDate = new Date(date);
     const istDate = add(utcDate, { hours: 5, minutes: 30 });
@@ -1180,12 +1246,13 @@ useEffect(() => {
                     />
                   </div>
                   <button
-                    className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition"
-                    onClick={addWifi}
-                    aria-label="Add wifi"
-                  >
-                    Add Wifi
-                  </button>
+  className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition"
+  onClick={newwifi.id ? updateWifi : addWifi}
+  aria-label={newwifi.id ? 'Update wifi' : 'Add wifi'}
+>
+  {newwifi.id ? 'Update Wifi' : 'Add Wifi'}
+</button>
+
                 </div>
               </div>
               {wifiLoading ? (
@@ -1202,18 +1269,49 @@ useEffect(() => {
                         <th className="text-left py-3 px-3 text-sm font-semibold text-gray-700">Active</th>
                       </tr>
                     </thead>
-                    <tbody>
-                      {wifiCredentials.map((item, index) => (
-                        <tr
-                          key={item.id}
-                          className={`border-b ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-gray-100 transition-colors`}
-                        >
-                          <td className="py-3 px-4 text-sm text-gray-800">{item.wifiname || 'N/A'}</td>
-                          <td className="py-3 px-4 text-sm text-gray-600">{item.password || 'N/A'}</td>
-                          <td className="py-3 px-4 text-sm text-gray-600">{item.is_active ? 'Yes' : 'No'}</td>
-                        </tr>
-                      ))}
-                    </tbody>
+                   <tbody>
+  {wifiCredentials.map((item, index) => (
+    <tr
+      key={item.id}
+      className={`border-b ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-gray-100 transition-colors`}
+    >
+      <td className="py-3 px-4 text-sm text-gray-800">{item.wifiname || 'N/A'}</td>
+      <td className="py-3 px-4 text-sm text-gray-600">{item.password || 'N/A'}</td>
+      <td className="py-3 px-4 text-sm text-gray-600">
+        <label className="inline-flex items-center cursor-pointer">
+          <input
+            type="checkbox"
+            className="sr-only"
+            checked={item.is_active}
+            onChange={() => toggleWifiStatus(item.id, !item.is_active)}
+          />
+          <div className="w-10 h-5 bg-gray-300 rounded-full shadow-inner relative">
+            <div
+              className={`w-5 h-5 rounded-full shadow absolute transition-transform ${
+                item.is_active ? 'translate-x-5 bg-green-500' : 'translate-x-0 bg-red-500'
+              }`}
+            />
+          </div>
+        </label>
+      </td>
+      <td className="py-3 px-4 text-sm text-gray-600 flex gap-2">
+        <button
+          onClick={() => handleEditWifi(item)}
+          className="bg-yellow-400 hover:bg-yellow-500 text-white px-3 py-1 rounded-md text-xs"
+        >
+          Edit
+        </button>
+        <button
+          onClick={() => handleDeleteWifi(item.id)}
+          className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-md text-xs"
+        >
+          Delete
+        </button>
+      </td>
+    </tr>
+  ))}
+</tbody>
+
                   </table>
                 </div>
               )}
