@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import useSWR from 'swr';
@@ -21,13 +20,13 @@ export default function Table() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [confirmAction, setConfirmAction] = useState(null);
   const [hasRedirected, setHasRedirected] = useState(false);
-
-  const sliderRef = useRef(null);
-
+  const [activeWifi, setActiveWifi] = useState(null);
   const [isAllowed, setIsAllowed] = useState(false);
   const [checking, setChecking] = useState(true);
 
-  // Check IP-based access
+  const sliderRef = useRef(null);
+
+  // IP-based access check
   useEffect(() => {
     const checkAccess = async () => {
       try {
@@ -46,9 +45,26 @@ export default function Table() {
     checkAccess();
   }, []);
 
-  // Menu fetch using SWR
-  const { data: menu, error: fetchError } = useSWR(apiUrl ? `${apiUrl}/api/menu` : null, fetchMenu);
+  // Fetch active Wi-Fi credentials from Supabase
+  useEffect(() => {
+    if (!isAllowed) {
+      const fetchActiveWifi = async () => {
+        const { data, error } = await supabase
+          .from('wifi_credentials')
+          .select('*')
+          .eq('is_active', true)
+          .single();
 
+        if (!error && data) {
+          setActiveWifi(data);
+        }
+      };
+
+      fetchActiveWifi();
+    }
+  }, [isAllowed]);
+
+  const { data: menu, error: fetchError } = useSWR(apiUrl ? `${apiUrl}/api/menu` : null, fetchMenu);
   const categories = ['All', ...new Set(menu?.map(item => item.category).filter(Boolean))];
   const filteredMenu = menu
     ? menu.filter(item => selectedCategory === 'All' || item.category === selectedCategory)
@@ -63,7 +79,7 @@ export default function Table() {
     return () => el?.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // 🧠 Only redirect once if an active order exists
+  // Redirect if order already exists
   useEffect(() => {
     localStorage.removeItem('orderId');
     localStorage.removeItem('appendOrder');
@@ -204,67 +220,83 @@ export default function Table() {
   const scrollLeft = () => sliderRef.current?.scrollBy({ left: -100, behavior: 'smooth' });
   const scrollRight = () => sliderRef.current?.scrollBy({ left: 100, behavior: 'smooth' });
 
-  return (
-    <section className="min-h-screen bg-gray-50 p-4 relative">
-      {checking ? (
-        <div className="min-h-screen flex items-center justify-center">Checking Wi-Fi...</div>
-      ) : !isAllowed ? (
-           <div className="fixed inset-0 bg-white flex flex-col justify-center items-center">
-        <h2 className="text-lg font-semibold text-gray-800 mb-2">Access Restricted</h2>
-        <p className="text-sm text-gray-600 mb-4">
-          Please connect to the café’s Wi-Fi to access the menu.
-        </p>
+  if (checking) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-lg font-semibold">
+        Checking Wi-Fi...
+      </div>
+    );
+  }
+
+  if (!isAllowed) {
+    return (
+      <div className="fixed inset-0 bg-gradient-to-br from-white to-gray-100 flex flex-col justify-center items-center p-6 text-center z-50">
+        <h2 className="text-2xl font-bold text-red-600 mb-2">Access Restricted</h2>
+        <p className="text-gray-700 mb-4">Please connect to the café’s Wi-Fi to access the menu.</p>
+
+        {activeWifi ? (
+          <div className="mb-4 bg-gradient-to-r from-blue-100 via-blue-200 to-blue-100 p-4 rounded-lg shadow-lg w-full max-w-sm">
+            <p className="text-gray-800 font-semibold text-left">
+              <span className="block mb-1">📶 <strong>Wi-Fi Name:</strong> {activeWifi.wifiname}</span>
+              <span className="block">🔒 <strong>Password:</strong> {activeWifi.password}</span>
+            </p>
+          </div>
+        ) : (
+          <p className="text-sm text-gray-500 mb-4">Fetching Wi-Fi details...</p>
+        )}
+
         <button
           onClick={() => window.location.reload()}
-          className="bg-blue-600 text-white px-4 py-2 rounded"
+          className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition-all"
         >
-          I’ve connected – Retry
+          I’ve Connected – Retry
         </button>
-      </div>     
-         ) : (
-        <>
-          <header className="text-center mb-6">
-            <h1 className="text-2xl font-bold text-gray-800">Welcome to Gsaheb Café</h1>
-          </header>
+      </div>
+    );
+  }
 
-          <div className="overflow-x-auto flex gap-2 mb-4" ref={sliderRef}>
-            {categories.map(category => (
-              <button
-                key={category}
-                onClick={() => setSelectedCategory(category)}
-                className={`px-4 py-2 rounded ${selectedCategory === category ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
-              >
-                {category}
-              </button>
-            ))}
+  return (
+    <section className="min-h-screen bg-gray-50 p-4 relative">
+      <header className="text-center mb-6">
+        <h1 className="text-2xl font-bold text-gray-800">Welcome to Gsaheb Café</h1>
+      </header>
+
+      <div className="overflow-x-auto flex gap-2 mb-4" ref={sliderRef}>
+        {categories.map(category => (
+          <button
+            key={category}
+            onClick={() => setSelectedCategory(category)}
+            className={`px-4 py-2 rounded ${selectedCategory === category ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
+          >
+            {category}
+          </button>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        {filteredMenu?.map(item => (
+          <div key={item.id} className="bg-white p-3 rounded shadow">
+            <img src={item.image_url} alt={item.name} className="w-full h-24 object-cover rounded mb-2" />
+            <h3 className="font-semibold">{item.name}</h3>
+            <p className="text-sm text-gray-500">{item.category}</p>
+            <p className="text-sm font-bold">₹{item.price.toFixed(2)}</p>
+            <button
+              onClick={() => addToCart(item)}
+              className="w-full mt-2 bg-green-500 text-white py-1 rounded"
+            >
+              Add to Cart
+            </button>
           </div>
+        ))}
+      </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            {filteredMenu?.map(item => (
-              <div key={item.id} className="bg-white p-3 rounded shadow">
-                <img src={item.image_url} alt={item.name} className="w-full h-24 object-cover rounded mb-2" />
-                <h3 className="font-semibold">{item.name}</h3>
-                <p className="text-sm text-gray-500">{item.category}</p>
-                <p className="text-sm font-bold">₹{item.price.toFixed(2)}</p>
-                <button
-                  onClick={() => addToCart(item)}
-                  className="w-full mt-2 bg-green-500 text-white py-1 rounded"
-                >
-                  Add to Cart
-                </button>
-              </div>
-            ))}
-          </div>
-
-          <BottomCart
-            cart={cart}
-            setCart={setCart}
-            onPlaceOrder={() => handleConfirm(isAppending ? updateOrder : placeOrder)}
-            onClose={() => setIsCartOpen(false)}
-            isOpen={isCartOpen}
-          />
-        </>
-      )}
+      <BottomCart
+        cart={cart}
+        setCart={setCart}
+        onPlaceOrder={() => handleConfirm(isAppending ? updateOrder : placeOrder)}
+        onClose={() => setIsCartOpen(false)}
+        isOpen={isCartOpen}
+      />
 
       {error && (
         <div className="fixed top-4 right-4 p-4 rounded shadow-lg bg-red-100 text-red-800 z-50">
@@ -288,7 +320,6 @@ export default function Table() {
     </section>
   );
 }
-
 
 // import { useState, useEffect } from 'react';
 // import { useRouter } from 'next/router';
