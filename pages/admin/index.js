@@ -170,7 +170,7 @@ export default function Admin() {
           {
             wifiname: newwifi.wifiname,
             password: newwifi.password,
-            is_active: true,
+            is_active: false,
           },
         ])
         .select();
