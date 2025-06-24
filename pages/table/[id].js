@@ -231,8 +231,8 @@ export default function Table() {
   if (!isAllowed) {
     return (
       <div className="fixed inset-0 bg-gradient-to-br from-white to-gray-100 flex flex-col justify-center items-center p-6 text-center z-50">
-        <h2 className="text-2xl font-bold text-red-600 mb-2">Access Restricted</h2>
-        <p className="text-gray-700 mb-4">Please connect to the café’s Wi-Fi to access the menu.</p>
+        // <h2 className="text-2xl font-bold text-red-600 mb-2">Access Restricted</h2>
+        <p className="font-bold text-red-600 mb-2">Please connect to the café’s Wi-Fi to access the menu.</p>
 
         {activeWifi ? (
           <div className="mb-4 bg-gradient-to-r from-blue-100 via-blue-200 to-blue-100 p-4 rounded-lg shadow-lg w-full max-w-sm">
@@ -245,12 +245,6 @@ export default function Table() {
           <p className="text-sm text-gray-500 mb-4">Fetching Wi-Fi details...</p>
         )}
 
-        <button
-          onClick={() => window.location.reload()}
-          className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition-all"
-        >
-          I’ve Connected – Retry
-        </button>
       </div>
     );
   }
