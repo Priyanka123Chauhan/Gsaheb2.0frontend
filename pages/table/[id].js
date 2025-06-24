@@ -5,8 +5,6 @@ import { supabase } from '../../lib/supabase';
 import BottomCart from '../../components/BottomCart';
 import { CakeIcon, ShoppingCartIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { fetchMenu, apiUrl } from '../../lib/api';
-import { motion } from 'framer-motion';
-import { WifiOff } from 'lucide-react'; // Optional: any icon you like
 
 export default function Table() {
   const router = useRouter();
@@ -232,68 +230,36 @@ export default function Table() {
 
   if (!isAllowed) {
     return (
-<div className="fixed inset-0 bg-gradient-to-br from-white to-blue-100 flex flex-col justify-center items-center p-6 text-center z-50">
-      {/* Animated Wi-Fi Icon */}
-      <motion.div
-        initial={{ scale: 0, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ type: 'spring', stiffness: 150, damping: 10 }}
-        className="mb-6"
-      >
-        <div className="bg-blue-500 text-white p-4 rounded-full shadow-lg animate-pulse">
-          <WifiOff className="w-10 h-10" />
-        </div>
-      </motion.div>
 
-      {/* Title */}
-      <motion.h2
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="text-3xl font-extrabold text-red-600 drop-shadow mb-2"
-      >
-        Access Restricted
-      </motion.h2>
+      <div className="fixed inset-0 bg-gradient-to-br from-white to-gray-100 flex flex-col items-center justify-center text-center px-6 py-10 animate-fade-in">
+  <div className="animate-bounce mb-6 text-5xl">📶</div>
 
-      {/* Subtext */}
-      <motion.p
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
-        className="font-bold text-xl text-green-700 mb-6"
-      >
-        Please connect to the café’s Wi-Fi to access the menu.
-      </motion.p>
+  <h2 className="text-3xl font-extrabold text-red-600 mb-3">Access Restricted</h2>
 
-      {/* Wi-Fi Credentials Box */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5 }}
-        className="mb-6 bg-gradient-to-r from-blue-100 via-blue-200 to-blue-100 p-4 rounded-xl shadow-xl w-full max-w-sm"
-      >
-        {activeWifi ? (
-          <p className="text-gray-800 font-semibold text-left text-sm">
-            <span className="block mb-2">📶 <strong>Wi-Fi Name:</strong> {activeWifi.wifiname}</span>
-            <span className="block">🔒 <strong>Password:</strong> {activeWifi.password}</span>
-          </p>
-        ) : (
-          <p className="text-gray-500 text-sm">Fetching Wi-Fi details...</p>
-        )}
-      </motion.div>
+  <p className="text-lg font-semibold text-green-600 mb-5">
+    Please connect to the café’s Wi-Fi to access the menu.
+  </p>
 
-      {/* Retry Button */}
-      <motion.button
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.6 }}
-        onClick={() => window.location.reload()}
-        className="bg-blue-600 text-white px-6 py-2 rounded-md shadow hover:bg-blue-700 transition-all duration-300 hover:scale-105"
-      >
-        I’ve Connected – Retry
-      </motion.button>
+  {activeWifi ? (
+    <div className="mb-6 bg-white border border-blue-200 rounded-xl shadow-lg p-5 w-full max-w-xs text-left animate-slide-in">
+      <p className="text-gray-800 font-medium">
+        <span className="block mb-2">📡 <strong>Wi-Fi Name:</strong> {activeWifi.wifiname}</span>
+        <span className="block">🔐 <strong>Password:</strong> {activeWifi.password}</span>
+      </p>
     </div>
-        ) : (
+  ) : (
+    <p className="text-sm text-gray-500 mb-6">Fetching Wi-Fi details...</p>
+  )}
+
+  <button
+    onClick={() => window.location.reload()}
+    className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-full shadow-md transition-all"
+  >
+    I’ve Connected – Retry
+  </button>
+</div>
+
+ ) : (
           <p className="text-sm text-gray-500 mb-4">Fetching Wi-Fi details...</p>
         )}
 
