@@ -207,19 +207,39 @@ const handleDeleteWifi = async (id) => {
 
 const toggleWifiStatus = async (id, newStatus) => {
   try {
+    if (newStatus) {
+      // Deactivate all others first
+      const { error: deactivateError } = await supabase
+        .from('wifi_credentials')
+        .update({ is_active: false })
+        .neq('id', id);
+
+      if (deactivateError) throw deactivateError;
+    }
+
+    // Update the selected wifi's status
     const { data, error } = await supabase
       .from('wifi_credentials')
       .update({ is_active: newStatus })
       .eq('id', id)
       .select();
+
     if (error) throw error;
-    setWifiCredentials((prev) =>
-      prev.map((w) => (w.id === id ? { ...w, is_active: newStatus } : w))
-    );
+
+    // Refresh local state
+    const { data: refreshedData, error: fetchError } = await supabase
+      .from('wifi_credentials')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (fetchError) throw fetchError;
+
+    setWifiCredentials(refreshedData || []);
   } catch (err) {
-    setWifiError(`Failed to toggle status: ${err.message}`);
+    setWifiError(`Failed to update active status: ${err.message}`);
   }
 };
+
 
   const updateWifi = async () => {
   if (!newwifi.wifiname || !newwifi.password) {
