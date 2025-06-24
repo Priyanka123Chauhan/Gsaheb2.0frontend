@@ -231,8 +231,7 @@ export default function Table() {
   if (!isAllowed) {
     return (
       <div className="fixed inset-0 bg-gradient-to-br from-white to-gray-100 flex flex-col justify-center items-center p-6 text-center z-50">
-        // <h2 className="text-2xl font-bold text-red-600 mb-2">Access Restricted</h2>
-        <p className="font-bold text-red-600 mb-2">Please connect to the café’s Wi-Fi to access the menu.</p>
+        <p className="font-bold text-2xl text-green-600 mb-2">Please connect to the café’s Wi-Fi to access the menu.</p>
 
         {activeWifi ? (
           <div className="mb-4 bg-gradient-to-r from-blue-100 via-blue-200 to-blue-100 p-4 rounded-lg shadow-lg w-full max-w-sm">
