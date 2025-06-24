@@ -5,6 +5,8 @@ import { supabase } from '../../lib/supabase';
 import BottomCart from '../../components/BottomCart';
 import { CakeIcon, ShoppingCartIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { fetchMenu, apiUrl } from '../../lib/api';
+import { motion } from 'framer-motion';
+import { WifiOff } from 'lucide-react'; // Optional: any icon you like
 
 export default function Table() {
   const router = useRouter();
@@ -230,16 +232,67 @@ export default function Table() {
 
   if (!isAllowed) {
     return (
-      <div className="fixed inset-0 bg-gradient-to-br from-white to-gray-100 flex flex-col justify-center items-center p-6 text-center z-50">
-        <p className="font-bold text-2xl text-green-600 mb-2">Please connect to the café’s Wi-Fi to access the menu.</p>
+<div className="fixed inset-0 bg-gradient-to-br from-white to-blue-100 flex flex-col justify-center items-center p-6 text-center z-50">
+      {/* Animated Wi-Fi Icon */}
+      <motion.div
+        initial={{ scale: 0, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ type: 'spring', stiffness: 150, damping: 10 }}
+        className="mb-6"
+      >
+        <div className="bg-blue-500 text-white p-4 rounded-full shadow-lg animate-pulse">
+          <WifiOff className="w-10 h-10" />
+        </div>
+      </motion.div>
 
+      {/* Title */}
+      <motion.h2
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        className="text-3xl font-extrabold text-red-600 drop-shadow mb-2"
+      >
+        Access Restricted
+      </motion.h2>
+
+      {/* Subtext */}
+      <motion.p
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+        className="font-bold text-xl text-green-700 mb-6"
+      >
+        Please connect to the café’s Wi-Fi to access the menu.
+      </motion.p>
+
+      {/* Wi-Fi Credentials Box */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5 }}
+        className="mb-6 bg-gradient-to-r from-blue-100 via-blue-200 to-blue-100 p-4 rounded-xl shadow-xl w-full max-w-sm"
+      >
         {activeWifi ? (
-          <div className="mb-4 bg-gradient-to-r from-blue-100 via-blue-200 to-blue-100 p-4 rounded-lg shadow-lg w-full max-w-sm">
-            <p className="text-gray-800 font-semibold text-left">
-              <span className="block mb-1">📶 <strong>Wi-Fi Name:</strong> {activeWifi.wifiname}</span>
-              <span className="block">🔒 <strong>Password:</strong> {activeWifi.password}</span>
-            </p>
-          </div>
+          <p className="text-gray-800 font-semibold text-left text-sm">
+            <span className="block mb-2">📶 <strong>Wi-Fi Name:</strong> {activeWifi.wifiname}</span>
+            <span className="block">🔒 <strong>Password:</strong> {activeWifi.password}</span>
+          </p>
+        ) : (
+          <p className="text-gray-500 text-sm">Fetching Wi-Fi details...</p>
+        )}
+      </motion.div>
+
+      {/* Retry Button */}
+      <motion.button
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.6 }}
+        onClick={() => window.location.reload()}
+        className="bg-blue-600 text-white px-6 py-2 rounded-md shadow hover:bg-blue-700 transition-all duration-300 hover:scale-105"
+      >
+        I’ve Connected – Retry
+      </motion.button>
+    </div>
         ) : (
           <p className="text-sm text-gray-500 mb-4">Fetching Wi-Fi details...</p>
         )}
